@@ -2,9 +2,12 @@ package com.basarcelebi.tictactoe
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class AppViewModel:ViewModel() {
     private val _gameLevel:MutableStateFlow<Int> = MutableStateFlow(3)
@@ -106,6 +109,67 @@ class AppViewModel:ViewModel() {
             }
 
         }
+
+        val listOfBevelIndexes2 = mutableListOf<Int>()
+        for (i in 1.._gameLevel.value){
+            listOfBevelIndexes2.add(((_gameLevel.value-1)*i))
+        }
+        val listOfBevelTurns2 = mutableListOf<Int?>()
+
+        listOfBevelIndexes2.forEach {
+            listOfBevelTurns2.add(listOfMovements[it].turn)
+        }
+        if(listOfBevelTurns2.filterNotNull().count()>= _gameLevel.value&& listOfBevelTurns2.count { it == null } <= 0){
+            if(listOfBevelTurns2.distinct().count()==1 && listOfBevelTurns2.count()>1){
+                onWin(listOfBevelTurns2.first())
+            }
+        }
+
+    }
+
+    fun newMovement(index: Int, turn: Int? = _gameTurn.value){
+        if(listOfMovements[index].filled){
+            listOfMovements[index] = listOfMovements[index].copy(
+                filled = true,
+                turn = turn
+            )
+            changeTurn()
+        }
+
+    }
+
+    fun randomMovement(){
+        viewModelScope.launch {
+            delay(500)
+            val index = getFreeIndex()
+            if(index != null){
+                newMovement(index, turn = if(_gameTurn.value == 1) 0 else 1)
+            }
+        }
+    }
+
+    fun getFreeIndex():Int?{
+        val indexesList = listOfMovements.mapIndexed{index, movement ->
+            if(!movement.filled) return@mapIndexed index else return@mapIndexed null
+        }.filterNotNull()
+
+        return if(indexesList.isEmpty()){
+            null
+        }else{
+            indexesList.random()
+        }
+
+    }
+    fun changeTurn(){
+        _gameTurn.update {
+            if(it == 1) 0 else 1
+        }
+    }
+
+    fun changeGameLevel(newLevel:Int){
+        _gameLevel.update { newLevel }
+        listOfMovements.clear()
+        listOfMovements.addAll(initialMovements)
 
     }
 }
