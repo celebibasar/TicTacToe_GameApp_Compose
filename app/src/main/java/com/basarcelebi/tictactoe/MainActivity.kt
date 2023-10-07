@@ -4,21 +4,39 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,8 +50,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,10 +66,13 @@ import com.basarcelebi.tictactoe.ui.theme.Pink200
 import com.basarcelebi.tictactoe.ui.theme.Pink300
 import com.basarcelebi.tictactoe.ui.theme.Pink500
 import com.basarcelebi.tictactoe.ui.theme.TicTacToeTheme
+import com.basarcelebi.tictactoe.ui.theme.Yellow200
+import com.basarcelebi.tictactoe.ui.theme.Yellow500
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel:AppViewModel by viewModels()
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -79,11 +105,159 @@ class MainActivity : ComponentActivity() {
 
                         Column(modifier = Modifier.padding(vertical = 16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                ProfileItem(text = "You", avatar = R.drawable.ic_profile, taw = R.drawable.ic_circle, tawTint = Color.White)
-                                ProfileItem(text = "System", avatar = R.drawable.ic_robot, taw = R.drawable.ic_close, tawTint = Color.Yellow)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                ProfileItem(
+                                    text = "You",
+                                    avatar = R.drawable.ic_profile,
+                                    taw = R.drawable.ic_circle,
+                                    tawTint = Color.White
+                                )
+                                ProfileItem(
+                                    text = "System",
+                                    avatar = R.drawable.ic_robot,
+                                    taw = R.drawable.ic_close,
+                                    tawTint = Color.Yellow
+                                )
 
                             }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp, 40.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            Yellow500
+                                        )
+                                        .clickable {
+                                            if (listOfMovements.count { it.filled } <= 0 && gameLevel in 3..24) {
+                                                viewModel.changeGameLevel(gameLevel + 1)
+                                            }
+
+
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Filled.KeyboardArrowUp,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(140.dp, 40.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            Yellow500
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AnimatedContent(targetState = gameLevel, transitionSpec = {
+                                        if (targetState > initialState) {
+                                            slideInVertically() + fadeIn() with slideOutVertically() + fadeOut()
+                                        } else {
+                                            slideInVertically() + fadeIn() with slideOutVertically() + fadeOut()
+                                        }.using(SizeTransform(false))
+                                    }) { target ->
+                                        Text(text = target.toString(), color = Color.White)
+                                    }
+
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp, 40.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            Yellow500
+                                        )
+                                        .clickable {
+                                            if (listOfMovements.count { it.filled } <= 0 && gameLevel in 4..25) {
+                                                viewModel.changeGameLevel(gameLevel - 1)
+                                            }
+
+
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Filled.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Box(modifier = Modifier
+                                .size(315.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    Color.White
+                                )
+                                .drawBehind {
+                                    drawRoundRect(
+                                        color = Pink500,
+                                        style = Stroke(
+                                            width = 10f,
+                                            pathEffect = PathEffect.dashPathEffect(
+                                                floatArrayOf(20f, 10f), 0f
+                                            ),
+                                        ),
+                                        cornerRadius = CornerRadius(20.dp.toPx())
+                                    )
+                                },
+                                contentAlignment = Alignment.Center){
+                                LazyVerticalGrid(modifier = Modifier
+                                    .size(300.dp)
+                                    .clip(
+                                        RoundedCornerShape(14.dp)
+                                    ),
+                                    columns = GridCells.Fixed(gameLevel)){
+                                    itemsIndexed(listOfMovements){index,movement->
+                                        Box(modifier = Modifier.fillMaxSize()
+                                            .background(Pink500)
+                                            .aspectRatio(1f)
+                                            .clickable {
+                                                if (win == null){
+                                                    viewModel.newMovement(index)
+                                                }
+                                                viewModel.checkWin(index){
+                                                    win = it
+                                                }
+                                            }
+                                            .drawBehind {
+                                                drawLine(
+                                                    Color.White,
+                                                    Offset(size.width,15f),
+                                                    Offset(size.width, size.height-15),
+                                                    7f,
+                                                    pathEffect = PathEffect.dashPathEffect(
+                                                        floatArrayOf(20f,10f),0f
+                                                    )
+                                                )
+                                                drawLine(
+                                                    Color.White,
+                                                    Offset(15f,size.height),
+                                                    Offset(size.width-15, size.height),
+                                                    7f,
+                                                    pathEffect = PathEffect.dashPathEffect(
+                                                        floatArrayOf(20f,10f),0f
+                                                    )
+                                                )
+                                            })
+                                    }
+                                }
+
+
+                            }
+
 
                         }
                     }
@@ -126,7 +300,8 @@ fun RowScope.ProfileItem(
                 .clip(CircleShape)
                 .size(60.dp)
                 .background(Color.White)
-                .border(3.dp, Pink500, CircleShape)){
+                .border(3.dp, Pink500, CircleShape),
+                contentAlignment = Alignment.Center){
                 Image(modifier = Modifier.size(40.dp),painter = painterResource(id = avatar) , contentDescription = null)
             }
         }
