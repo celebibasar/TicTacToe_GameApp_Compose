@@ -5,10 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
@@ -195,77 +200,173 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             Spacer(modifier = Modifier.height(16.dp))
-                            Box(modifier = Modifier
-                                .size(315.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(
-                                    Color.White
-                                )
-                                .drawBehind {
-                                    drawRoundRect(
-                                        color = Pink500,
-                                        style = Stroke(
-                                            width = 10f,
-                                            pathEffect = PathEffect.dashPathEffect(
-                                                floatArrayOf(20f, 10f), 0f
-                                            ),
-                                        ),
-                                        cornerRadius = CornerRadius(20.dp.toPx())
+                            Box(
+                                modifier = Modifier
+                                    .size(315.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(
+                                        Color.White
                                     )
-                                },
-                                contentAlignment = Alignment.Center){
-                                LazyVerticalGrid(modifier = Modifier
-                                    .size(300.dp)
-                                    .clip(
-                                        RoundedCornerShape(14.dp)
-                                    ),
-                                    columns = GridCells.Fixed(gameLevel)){
-                                    itemsIndexed(listOfMovements){index,movement->
-                                        Box(modifier = Modifier.fillMaxSize()
+                                    .drawBehind {
+                                        drawRoundRect(
+                                            color = Pink500,
+                                            style = Stroke(
+                                                width = 10f,
+                                                pathEffect = PathEffect.dashPathEffect(
+                                                    floatArrayOf(20f, 10f), 0f
+                                                ),
+                                            ),
+                                            cornerRadius = CornerRadius(20.dp.toPx())
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LazyVerticalGrid(
+                                    modifier = Modifier
+                                        .size(300.dp)
+                                        .clip(
+                                            RoundedCornerShape(14.dp)
+                                        ),
+                                    columns = GridCells.Fixed(gameLevel)
+                                ) {
+                                    itemsIndexed(listOfMovements) { index, movement ->
+                                        Box(modifier = Modifier
+                                            .fillMaxSize()
                                             .background(Pink500)
                                             .aspectRatio(1f)
                                             .clickable {
-                                                if (win == null){
+                                                if (win == null) {
                                                     viewModel.newMovement(index)
                                                 }
-                                                viewModel.checkWin(index){
+                                                viewModel.checkWin(index) {
                                                     win = it
                                                 }
                                             }
                                             .drawBehind {
                                                 drawLine(
                                                     Color.White,
-                                                    Offset(size.width,15f),
-                                                    Offset(size.width, size.height-15),
+                                                    Offset(size.width, 15f),
+                                                    Offset(size.width, size.height - 15),
                                                     7f,
                                                     pathEffect = PathEffect.dashPathEffect(
-                                                        floatArrayOf(20f,10f),0f
+                                                        floatArrayOf(20f, 10f), 0f
                                                     )
                                                 )
                                                 drawLine(
                                                     Color.White,
-                                                    Offset(15f,size.height),
-                                                    Offset(size.width-15, size.height),
+                                                    Offset(15f, size.height),
+                                                    Offset(size.width - 15, size.height),
                                                     7f,
                                                     pathEffect = PathEffect.dashPathEffect(
-                                                        floatArrayOf(20f,10f),0f
+                                                        floatArrayOf(20f, 10f), 0f
                                                     )
                                                 )
-                                            })
+                                            },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            val imageRes = getTaw(movement.turn)
+                                            val animDuration = 500
+                                            Column {
+                                                AnimatedVisibility(
+                                                    visible = movement.filled,
+                                                    enter = scaleIn(tween(animDuration)) + fadeIn(
+                                                        tween(animDuration)
+                                                    ),
+                                                    exit = scaleOut(tween(animDuration)) + fadeOut(
+                                                        tween(animDuration)
+                                                    )
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(id = imageRes),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(if (gameLevel >= 7) 20.dp else 30.dp),
+                                                        tint = if (movement.turn != 0) Yellow200 else Color.White
+                                                    )
+
+                                                }
+                                            }
+                                        }
+
                                     }
                                 }
 
 
                             }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            AnimatedVisibility(visible = win == null,
+                                enter= fadeIn() + scaleIn(),
+                                exit = fadeOut() + scaleOut()) {
+                                val turnBoxColor by animateColorAsState(targetValue =
+                                if (gameTurn == 0) Pink500 else Yellow500,
+                                    animationSpec = tween(500))
+                                Box(
+                                    modifier = Modifier
+                                        .size(140.dp,40.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(turnBoxColor),
+                                    contentAlignment = Alignment.Center
+                                    ){
+                                    Row {
+                                        AnimatedVisibility(visible = gameTurn == 0,
+                                            enter = scaleIn(),
+                                            exit = scaleOut()) {
+                                            Text(text = "Your Turn")
+
+                                        }
+                                    }
+                                    Row {
+                                        AnimatedVisibility(visible = gameTurn == 1,
+                                            enter = scaleIn(),
+                                            exit = scaleOut()) {
+                                            Text(text = "System Turn")
+
+                                        }
+                                    }
+                                }
+
+                            }
+                            AnimatedVisibility(visible = win != null,
+                                enter= fadeIn() + scaleIn(),
+                                exit = fadeOut() + scaleOut()) {
+                                Column {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(140.dp, 40.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (win == 0) Pink500 else Yellow500),
+                                        contentAlignment = Alignment.Center
+                                    ){
+                                        
+                                       Text(text = if(win == 0) "You Won!" else "System Won!")
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(140.dp,40.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (win == 0) Pink500 else Yellow500)
+                                            .clickable {
+                                                viewModel.resetGame()
+                                                win = null },
+                                        contentAlignment = Alignment.Center
+                                    ){
+
+                                        Text(text = "Reset Game")
+                                    }
+                                }
+
+                            }
 
 
                         }
+
                     }
                 }
             }
         }
     }
 }
+fun getTaw(turn:Int?) = if (turn == 1) R.drawable.ic_close else R.drawable.ic_circle
 
 @Composable
 fun RowScope.ProfileItem(
